@@ -1,4 +1,4 @@
-import {getExtendedData} from 'extended-data';
+const {getExtendedData} = require('extended-data');
 
 console.log(
   'ExtendedData: ',
