@@ -1,37 +1,83 @@
-import { uid } from 'uid';
+import { EventEmitter } from 'node:events';
 
-const capitalizeFirstLetter = str => {
-  str = str.trim().toLowerCase();
+class EE extends EventEmitter {
+  constructor({ name }) {
+    super();
+    this.name = name;
+  }
 
-  return `${str[0].toUpperCase()}${str.slice(1)}`;
-};
+  emit(name, ...args) {
+    super.emit(name, ...args);
+    console.log('logger', name, ...args);
+  }
+}
 
-const getExtendedData = ({ name, dateOfBirth, purpose }) => {
-  const [firstName, lastName] = name.split(/\s+/).map(capitalizeFirstLetter);
+class Timer extends EE {
+  constructor(init = true) {
+    super({ name: 'Timer' });
+    this.id = null;
+    this.tick = 0;
+    init && this.init();
+  }
 
-  return {
-    id: uid(10),
-    firstName,
-    lastName,
-    dateOfBirth,
-    age: Math.floor(
-      (new Date().getTime() -
-        new Date(
-          dateOfBirth
-            .split(/\s|\.|-/)
-            .reverse()
-            .join('-'),
-        ).getTime()) /
-        31536000000,
-    ),
-    purpose: capitalizeFirstLetter(purpose),
-  };
-};
+  init() {
+    this.on('tick', this.nextTick);
+  }
 
-console.log(
-  getExtendedData({
-    name: 'kirill LaVroV',
-    dateOfBirth: '28.10.1982',
-    purpose: 'Изучить node.js',
-  }),
-);
+  nextTick() {
+    console.log(`Tick - ${++this.tick}`);
+
+    this.id = setTimeout(() => {
+      this.emit('tick', this.tick);
+    }, 1000);
+  }
+
+  start() {
+    this.emit('tick', this.tick);
+  }
+
+  pause() {
+    this.id && clearTimeout(this.id);
+  }
+
+  reset() {
+    this.tick = 0;
+  }
+
+  stop() {
+    this.pause();
+    this.reset();
+  }
+}
+
+const timer = new Timer();
+
+timer.start();
+setTimeout(() => timer.pause(), 5000);
+setTimeout(() => timer.start(), 7000);
+setTimeout(() => timer.reset(), 10000);
+setTimeout(() => timer.stop(), 12000);
+
+class Messenger extends EE {
+  constructor(init = true) {
+    super('Messenger');
+    init && this.init();
+  }
+
+  init() {
+    this.on('message', this.receiveMessage);
+  }
+
+  receiveMessage({ username, message }) {
+    console.log(`${username}: ${message}`);
+  }
+
+  sendMessage(username, message) {
+    this.emit('message', { username, message });
+  }
+}
+
+const messenger = new Messenger({ name: 'Messenger' });
+
+messenger.sendMessage('Кирилл', 'Я сдал работу.');
+messenger.sendMessage('Максим', 'Молодец!');
