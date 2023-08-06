@@ -73,8 +73,8 @@ const appCopyFiles = async () => {
   }
 };
 
-watcherStart('./files');
-app();
+// watcherStart('./files');
+// app();
 // appCopyFiles();
 copyFolde('./files/test', './files/newFolder');
 console.log('App start');
