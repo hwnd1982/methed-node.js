@@ -1,83 +1,80 @@
-import { EventEmitter } from 'node:events';
+import {
+  readdir,
+  rename,
+  mkdir,
+  copyFile,
+  access,
+  watch,
+} from 'node:fs/promises';
+import { copyFolde } from './modules/copyFolder.js';
+import { readText } from './modules/readText.js';
+import { write } from './modules/write.js';
 
-class EE extends EventEmitter {
-  constructor({ name }) {
-    super();
-    this.name = name;
+const app = async () => {
+  try {
+    const text = await readText('./files/text.txt');
+
+    console.log('text', text);
+
+    await write('./files/reultAsync.txt', text.toUpperCase());
+
+    console.log('Done');
+  } catch (err) {
+    console.warn(`Ошибка приложения: ${err.message}`);
   }
+};
 
-  emit(name, ...args) {
-    super.emit(name, ...args);
-    console.log('logger', name, ...args);
+const watcherStart = async path => {
+  try {
+    let date = 0;
+    const changes = [];
+    const watcher = watch(path);
+
+    for await (const { eventType, filename } of watcher) {
+      const now = Date.now();
+
+      if (now - date > 100) {
+        date = now;
+        changes.push({ date, eventType, filename });
+
+        // console.log('\x1Bc');
+        changes.forEach(({ date, eventType, filename }) => {
+          console.log(
+            `${new Date(date).toISOString()}: ${eventType} - ${filename}`,
+          );
+        });
+      }
+    }
+  } catch (err) {
+    console.log(`Ошибка приложения: ${err.message}`);
   }
-}
+};
 
-class Timer extends EE {
-  constructor(init = true) {
-    super({ name: 'Timer' });
-    this.id = null;
-    this.tick = 0;
-    init && this.init();
+const appCopyFiles = async () => {
+  try {
+    const files = await readdir('./files');
+
+    if (
+      !(await access('./files/newFolder').catch(async () => {
+        await mkdir('./files/newFolder');
+        console.log('Папка создана');
+      }))
+    ) {
+      files.splice(files.indexOf('newFolder'), 1);
+    }
+
+    files.forEach(async file => {
+      await copyFile(`./files/${file}`, `./files/newFolder/${file}`);
+
+      console.log(file, 'скопирован');
+    });
+  } catch (err) {
+    console.warn(`Ошибка приложения: ${err.message}`);
   }
+};
 
-  init() {
-    this.on('tick', this.nextTick);
-  }
-
-  nextTick() {
-    console.log(`Tick - ${++this.tick}`);
-
-    this.id = setTimeout(() => {
-      this.emit('tick', this.tick);
-    }, 1000);
-  }
-
-  start() {
-    this.emit('tick', this.tick);
-  }
-
-  pause() {
-    this.id && clearTimeout(this.id);
-  }
-
-  reset() {
-    this.tick = 0;
-  }
-
-  stop() {
-    this.pause();
-    this.reset();
-  }
-}
-
-const timer = new Timer();
-
-timer.start();
-setTimeout(() => timer.pause(), 5000);
-setTimeout(() => timer.start(), 7000);
-setTimeout(() => timer.reset(), 10000);
-setTimeout(() => timer.stop(), 12000);
-
-class Messenger extends EE {
-  constructor(init = true) {
-    super('Messenger');
-    init && this.init();
-  }
-
-  init() {
-    this.on('message', this.receiveMessage);
-  }
-
-  receiveMessage({ username, message }) {
-    console.log(`${username}: ${message}`);
-  }
-
-  sendMessage(username, message) {
-    this.emit('message', { username, message });
-  }
-}
-
-const messenger = new Messenger({ name: 'Messenger' });
-
-messenger.sendMessage('Кирилл', 'Я сдал работу.');
-messenger.sendMessage('Максим', 'Молодец!');
+watcherStart('./files');
+app();
+// appCopyFiles();
+copyFolde('./files/test', './files/newFolder');
+console.log('App start');
