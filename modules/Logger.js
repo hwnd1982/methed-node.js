@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { stat, appendFile, access } from 'node:fs/promises';
+import { stat, appendFile, access, writeFile } from 'node:fs/promises';
 import { write } from './write.js';
 import { readText } from './readText.js';
 
@@ -9,6 +9,8 @@ export class Logger extends EventEmitter {
     this.filename = filename;
     this.maxSize = maxSize;
     this.logQueue = [];
+    this.logQueueSize = 0;
+    this.logQueueOverflow = false;
     this.writing = false;
     this.promise = null;
     init && this.init();
@@ -17,121 +19,96 @@ export class Logger extends EventEmitter {
   init() {
     this.promise = access(this.filename).catch(async () => {
       this.promise = write(this.filename, '');
-      this.log(`${this.filename} создан`);
+      this.log('log file created');
     });
 
     this.on('messageLogged', message => {
-      console.log('Записано сообщение:', message);
+      console.log('Message recorded:', message);
     });
   }
 
-  log(massage) {
-    this.logQueue.push(`${new Date(Date.now()).toISOString()}: ${massage}`);
+  log(message) {
+    message = `${new Date(Date.now()).toISOString()}: ${message}`;
+
+    if (this.logQueueSize + message.length + 1 > this.maxSize) {
+      const log = `${new Date(Date.now()).toISOString()}: log file overwritten`;
+
+      this.logQueueOverflow = true;
+
+      while (this.logQueueSize + message.length + 2 > this.maxSize) {
+        this.logQueueSize -= this.logQueue.shift().length;
+      }
+
+      this.logQueue.unshift(log);
+      this.logQueueSize += log.length;
+    }
+
+    this.logQueue.push(message);
+    this.logQueueSize += message.length;
 
     if (!this.writing) this.writeLog();
   }
 
   async writeLog() {
-    const message = this.logQueue.join('\n') + '\n';
+    const logQueue = [...this.logQueue];
+    const { logQueueOverflow, logQueueSize, maxSize, filename } = this;
+
+    this.logQueue = [];
+    this.logQueueSize = 0;
+    this.logQueueOverflow = false;
+
     this.writing = true;
-
-    const size = await this.fileSize.size;
-    if (size > this.fileSize) {
-      const text = await readText(thi s.filename);
+    if (logQueueOverflow) {
+      await writeFile(filename, `${logQueue.join('\n')}`, {
+        encoding: 'utf8',
+      });
     }
-    await appendFile(this.filename, message, { encoding: 'utf8' });
-    this.emit('messageLogged', message);
 
+    if (!logQueueOverflow) {
+      const size = (await this.fileSize).size;
+
+      if (size + logQueueSize > maxSize) {
+        let fileSize = logQueueSize;
+        const log = `${new Date(
+          Date.now(),
+        ).toISOString()}: log file overwritten`;
+        const text = (await readText(filename)).split('\n');
+
+        logQueue.shift();
+        for (let i = text.length - 1; fileSize < maxSize && i > 0; i--) {
+          fileSize += text[i].length + 1;
+
+          if (fileSize < maxSize) {
+            logQueue.unshift(text[i]);
+          }
+        }
+
+        logQueue.unshift(log);
+        await writeFile(filename, `${logQueue.join('\n')}`, {
+          encoding: 'utf8',
+        });
+      } else {
+        await appendFile(
+          filename,
+          `${size ? '\n' : ''}${logQueue.join('\n')}`,
+          {
+            encoding: 'utf8',
+          },
+        );
+      }
+    }
+
+    logQueue.forEach(log => this.emit('messageLogged', log));
     this.writing = false;
   }
 
   rotateLog() {}
 
   get fileSize() {
-    return this.promise
-      ? this.promise.then(() => stat(this.filename))
-      : stat(this.filename);
+    if (this.promise) {
+      return this.promise.then(() => stat(this.filename));
+    } else {
+      return stat(this.filename);
+    }
   }
 }
-
-// class EE extends EventEmitter {
-//   constructor({ name }) {
-//     super();
-//     this.name = name;
-//   }
-
-//   emit(name, ...args) {
-//     super.emit(name, ...args);
-//     console.log('logger', name, ...args);
-//   }
-// }
-
-// class Timer extends EE {
-//   constructor(init = true) {
-//     super({ name: 'Timer' });
-//     this.id = null;
-//     this.tick = 0;
-//     init && this.init();
-//   }
-
-//   init() {
-//     this.on('tick', this.nextTick);
-//   }
-
-//   nextTick() {
-//     console.log(`Tick - ${++this.tick}`);
-
-//     this.id = setTimeout(() => {
-//       this.emit('tick', this.tick);
-//     }, 1000);
-//   }
-
-//   start() {
-//     this.emit('tick', this.tick);
-//   }
-
-//   pause() {
-//     this.id && clearTimeout(this.id);
-//   }
-
-//   reset() {
-//     this.tick = 0;
-//   }
-
-//   stop() {
-//     this.pause();
-//     this.reset();
-//   }
-// }
-
-// const timer = new Timer();
-
-// timer.start();
-// setTimeout(() => timer.pause(), 5000);
-// setTimeout(() => timer.start(), 7000);
-// setTimeout(() => timer.reset(), 10000);
-// setTimeout(() => timer.stop(), 12000);
-
-// class Messenger extends EE {
-//   constructor(init = true) {
-//     super('Messenger');
-//     init && this.init();
-//   }
-
-//   init() {
-//     this.on('message', this.receiveMessage);
-//   }
-
-//   receiveMessage({ username, message }) {
-//     console.log(`${username}: ${message}`);
-//   }
-
-//   sendMessage(username, message) {
-//     this.emit('message', { username, message });
-//   }
-// }
-
-// const messenger = new Messenger({ name: 'Messenger' });
-
-// messenger.sendMessage('Кирилл', 'Я сдал работу.');
-// messenger.sendMessage('Максим', 'Молодец!');

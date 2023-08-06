@@ -3,13 +3,11 @@ import { Logger } from './Logger.js';
 
 const logger = new Logger('./files/log.txt', 1024);
 
-logger.fileSize.then(stat => console.log(stat.size));
-
 export const copyFolde = async (
   sourceDir,
   targetDir,
   callback = (err = null) =>
-    err && logger.log(`Ошибка копирования папки: ${err.message}`),
+    err && logger.log(`Folder copy error: ${err.message}`),
 ) => {
   try {
     const { files, dirs } = (
@@ -25,12 +23,12 @@ export const copyFolde = async (
 
     await access(targetDir).catch(async () => {
       await mkdir(targetDir);
-      logger.log('Папка создана');
+      logger.log('folder created');
     });
 
     files.forEach(async file => {
       await copyFile(`${sourceDir}/${file}`, `${targetDir}/${file}`);
-      logger.log(`${file} скопирован`);
+      logger.log(`${file} copied`);
     });
 
     dirs.forEach(async dir => {

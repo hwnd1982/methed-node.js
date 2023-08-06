@@ -1,12 +1,6 @@
-import {
-  readdir,
-  rename,
-  mkdir,
-  copyFile,
-  access,
-  watch,
-} from 'node:fs/promises';
+import { watch } from 'node:fs/promises';
 import { copyFolde } from './modules/copyFolder.js';
+import { Logger } from './modules/Logger.js';
 import { readText } from './modules/readText.js';
 import { write } from './modules/write.js';
 
@@ -24,25 +18,19 @@ const app = async () => {
   }
 };
 
+const logger = new Logger('./files/watcherlog.txt', 2048);
+
 const watcherStart = async path => {
   try {
     let date = 0;
-    const changes = [];
-    const watcher = watch(path);
+    const watcher = watch(path, { recursive: true });
 
     for await (const { eventType, filename } of watcher) {
       const now = Date.now();
 
       if (now - date > 100) {
         date = now;
-        changes.push({ date, eventType, filename });
-
-        // console.log('\x1Bc');
-        changes.forEach(({ date, eventType, filename }) => {
-          console.log(
-            `${new Date(date).toISOString()}: ${eventType} - ${filename}`,
-          );
-        });
+        logger.log(`${eventType} - ${filename}`);
       }
     }
   } catch (err) {
@@ -52,29 +40,14 @@ const watcherStart = async path => {
 
 const appCopyFiles = async () => {
   try {
-    const files = await readdir('./files');
-
-    if (
-      !(await access('./files/newFolder').catch(async () => {
-        await mkdir('./files/newFolder');
-        console.log('Папка создана');
-      }))
-    ) {
-      files.splice(files.indexOf('newFolder'), 1);
-    }
-
-    files.forEach(async file => {
-      await copyFile(`./files/${file}`, `./files/newFolder/${file}`);
-
-      console.log(file, 'скопирован');
-    });
+    await copyFolde('./files/test', './files/newFolder');
   } catch (err) {
     console.warn(`Ошибка приложения: ${err.message}`);
   }
 };
 
-// watcherStart('./files');
-// app();
-// appCopyFiles();
-copyFolde('./files/test', './files/newFolder');
+watcherStart('./files');
+app();
+appCopyFiles();
+
 console.log('App start');
