@@ -52,13 +52,14 @@ export class Logger extends EventEmitter {
   async writeLog() {
     const logQueue = [...this.logQueue];
     const { logQueueOverflow, logQueueSize, maxSize, filename } = this;
-    const text = (await this.rotateLog()).split('\n');
 
     this.logQueue = [];
     this.logQueueSize = 0;
     this.logQueueOverflow = false;
 
     this.writing = true;
+
+    const text = (await this.rotateLog()).split('\n');
     if (logQueueOverflow) {
       await writeFile(filename, `${logQueue.join('\n')}`, {
         encoding: 'utf8',
