@@ -52,6 +52,7 @@ export class Logger extends EventEmitter {
   async writeLog() {
     const logQueue = [...this.logQueue];
     const { logQueueOverflow, logQueueSize, maxSize, filename } = this;
+    const text = (await this.rotateLog()).split('\n');
 
     this.logQueue = [];
     this.logQueueSize = 0;
@@ -72,7 +73,6 @@ export class Logger extends EventEmitter {
         const log = `${new Date(
           Date.now(),
         ).toISOString()}: log file overwritten`;
-        const text = (await readText(filename)).split('\n');
 
         logQueue.shift();
         for (let i = text.length - 1; fileSize < maxSize && i > 0; i--) {
@@ -99,10 +99,29 @@ export class Logger extends EventEmitter {
     }
 
     logQueue.forEach(log => this.emit('messageLogged', log));
+    this.rotateLog();
     this.writing = false;
   }
 
-  rotateLog() {}
+  async rotateLog() {
+    let text = '';
+
+    await access(this.filename).catch(async () => {
+      text = await readText(`${this.filename}.bk`);
+      await write(this.filename, text);
+      this.log('log file overwritten');
+    });
+
+    if (!text) {
+      text = await readText(this.filename);
+
+      writeFile(`${this.filename}.bk`, text, {
+        encoding: 'utf8',
+      });
+    }
+
+    return text;
+  }
 
   get fileSize() {
     if (this.promise) {
