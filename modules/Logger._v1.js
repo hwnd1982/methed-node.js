@@ -1,5 +1,11 @@
 import { EventEmitter } from 'node:events';
-import { stat, writeFile, copyFile } from 'node:fs/promises';
+import {
+  stat,
+  writeFile,
+  copyFile,
+  readFile,
+  appendFile,
+} from 'node:fs/promises';
 
 export class Logger extends EventEmitter {
   constructor(filename, maxSize, init = true) {
@@ -24,30 +30,48 @@ export class Logger extends EventEmitter {
   }
 
   async writeLog() {
-    const logEntry = `${this.logQueue.join('\n')}`;
+    try {
+      const logEntry = `${this.logQueue.shift()}\n`;
 
-    this.logQueue = [];
-    this.writing = true;
+      this.writing = true;
 
-    await writeFile(this.filename, logEntry, {
-      encoding: 'utf8',
-    });
+      await appendFile(this.filename, logEntry, {
+        encoding: 'utf8',
+      });
 
-    if ((await this.fileSize) >= this.maxSize) {
-      await this.rotateLog();
-    }
+      if ((await this.fileSize) >= this.maxSize) {
+        await this.rotateLog();
+      }
 
-    this.emit('messageLogged', logEntry);
-    this.writing = false;
+      this.emit('messageLogged', logEntry);
 
-    if (this.logQueue.length) {
-      await this.writeLog();
+      if (this.logQueue.length) {
+        await this.writeLog();
+      }
+
+      this.writing = false;
+    } catch (err) {
+      this.log(err.message);
     }
   }
 
   async rotateLog() {
-    await copyFile(this.filename, `${this.filename}.bk`);
-    await writeFile(this.filename, '');
+    try {
+      const log = await readFile(this.filename, 'utf8');
+
+      let logLength = log.length;
+      const logLines = log.split('\n');
+
+      await copyFile(this.filename, `${this.filename}.bak`);
+
+      for (let i = 0; logLength > this.maxSize && i < logLines.length; i++) {
+        logLength -= logLines.shift().length;
+      }
+
+      await writeFile(this.filename, logLines.join('\n'));
+    } catch (err) {
+      this.log(err.message);
+    }
   }
 
   get fileSize() {
