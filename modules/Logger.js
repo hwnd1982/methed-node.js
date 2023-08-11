@@ -62,7 +62,7 @@ export class Logger extends EventEmitter {
         } else {
           const logFileLine = logFile.split('\n');
 
-          await writeFile(`${this.filename}.bak`, logFile, {
+          writeFile(`${this.filename}.bak`, logFile, {
             flag: 'w+',
           });
 

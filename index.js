@@ -21,7 +21,7 @@ const appLogger = async () => {
           throw new Error('Пришол полный пицец!!!!');
         }
       }
-    }, 1000 * j);
+    }, 2000 * j);
   }
 };
 
