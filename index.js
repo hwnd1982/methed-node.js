@@ -1,5 +1,5 @@
 import { copyFolder } from './modules/copyFolder.js';
-import { Logger } from './modules/Logger.js';
+import { Logger } from './modules/Logger._v2.js';
 
 const appCopyFiles = async (sourceDir, targetDir) => {
   try {
