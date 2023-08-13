@@ -1,11 +1,5 @@
 import { EventEmitter } from 'node:events';
-import {
-  stat,
-  writeFile,
-  copyFile,
-  readFile,
-  appendFile,
-} from 'node:fs/promises';
+import { stat, writeFile, readFile, appendFile } from 'node:fs/promises';
 
 export class Logger extends EventEmitter {
   constructor(filename, maxSize, init = true) {
@@ -31,25 +25,30 @@ export class Logger extends EventEmitter {
 
   async writeLog() {
     try {
-      const logEntry = `${this.logQueue.shift()}\n`;
-
       this.writing = true;
+      let fileSize = 0;
+      const { logQueue, filename, maxSize } = this;
+      const logEntry = logQueue.length ? `\n${logQueue.join('\n')}` : '';
 
-      await appendFile(this.filename, logEntry, {
+      this.logQueue.length = 0;
+
+      await appendFile(filename, logEntry, {
         encoding: 'utf8',
       });
 
-      if ((await this.fileSize) >= this.maxSize) {
-        await this.rotateLog();
-      }
+      fileSize = await this.fileSize;
+      fileSize >= maxSize && (fileSize = await this.rotateLog());
 
-      this.emit('messageLogged', logEntry);
-
-      if (this.logQueue.length) {
-        await this.writeLog();
-      }
+      this.emit(
+        'messageLogged',
+        `${new Date(Date.now()).toISOString()}: ${
+          logEntry.length === fileSize ? 'log created' : 'log overwrite'
+        } - size: ${fileSize}byte;`,
+      );
 
       this.writing = false;
+
+      this.logQueue.length && (await this.writeLog());
     } catch (err) {
       this.log(err.message);
     }
@@ -57,18 +56,25 @@ export class Logger extends EventEmitter {
 
   async rotateLog() {
     try {
-      const log = await readFile(this.filename, 'utf8');
+      const { filename, maxSize } = this;
+      let logFile = await readFile(filename);
+      const size = logFile.length;
 
-      let logLength = log.length;
-      const logLines = log.split('\n');
+      writeFile(`${this.filename}.bak`, logFile);
 
-      await copyFile(this.filename, `${this.filename}.bak`);
+      logFile = logFile.slice(logFile.length - maxSize);
+      logFile = logFile.slice(logFile.indexOf('\n') + 1);
 
-      for (let i = 0; logLength > this.maxSize && i < logLines.length; i++) {
-        logLength -= logLines.shift().length;
-      }
+      await writeFile(this.filename, logFile);
 
-      await writeFile(this.filename, logLines.join('\n'));
+      this.emit(
+        'messageLogged',
+        `${new Date(
+          Date.now(),
+        ).toISOString()}: log rotated to ${filename}.bak - size: ${size}byte`,
+      );
+
+      return logFile.length;
     } catch (err) {
       this.log(err.message);
     }
