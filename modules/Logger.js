@@ -53,33 +53,17 @@ export class Logger extends EventEmitter {
       this.writing = true;
 
       if (!logQueueOverflow && logEntry) {
-        let appendString = '';
-        const fileSize = await this.fileSize;
-        const logFile = await readFile(filename, 'utf8');
+        logEntry += `\n${await readFile(filename)}`;
 
-        if (fileSize + logEntry.length < maxSize) {
-          logEntry = `${logEntry}\n${logFile}`;
-        } else {
-          const logFileLine = logFile.split('\n');
-
-          writeFile(`${this.filename}.bak`, logFile, {
-            flag: 'w+',
-          });
-
-          while (logEntry.length + appendString.length + 1 < maxSize) {
-            appendString = logFileLine.pop();
-
-            if (logEntry.length + appendString.length + 1 < maxSize) {
-              logEntry = `${appendString}\n${logEntry}`;
-            }
-          }
+        // использую writeFile, а не copyFile, чтобы не тормозить процесс,
+        // не использую await так как процесс записи будет параллельным
+        logEntry.length >= maxSize && this.rotateLog(logEntry);
+        while (logEntry.length >= maxSize) {
+          logEntry = logEntry.slice(0, logEntry.lastIndexOf('\n'));
         }
       }
 
-      await writeFile(filename, logEntry, {
-        encoding: 'utf8',
-        flag: 'w+',
-      });
+      await writeFile(filename, logEntry);
 
       this.emit(
         'messageLogged',
@@ -98,6 +82,17 @@ export class Logger extends EventEmitter {
     }
   }
 
+  async rotateLog(log) {
+    await writeFile(`${this.filename}.bak`, log);
+    this.emit(
+      'messageLogged',
+      `${new Date(Date.now()).toISOString()}: log rotated to ${
+        this.filename
+      }.bak`,
+    );
+  }
+
+  // лишний метод не используется
   get fileSize() {
     return stat(this.filename)
       .then(stat => stat.size)

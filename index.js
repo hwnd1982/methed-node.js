@@ -18,10 +18,10 @@ const appLogger = async () => {
       for (let i = 0; i < 100000; i++) {
         logger.log(`Сообщение №${i + 100000 * j}`);
         if (i + 100000 * j === 234231) {
-          throw new Error('Пришол полный пицец!!!!');
+          throw new Error('Пришел полный пицец!!!!');
         }
       }
-    }, 2000 * j);
+    }, 1000 * j);
   }
 };
 
