@@ -1,5 +1,5 @@
 import { copyFolder } from './modules/copyFolder.js';
-import { Logger } from './modules/Logger._v2.js';
+import { Logger } from './modules/Logger.js';
 
 const appCopyFiles = async (sourceDir, targetDir) => {
   try {
@@ -21,9 +21,13 @@ const appLogger = async () => {
           throw new Error('Пришол полный пицец!!!!');
         }
       }
-    }, 2000 * j);
+    }, 20000 * j);
   }
 };
+
+// если не сделать паузу в 20 секунд между пакетами то ничего не запишется
+// оно и понятно объем данных больше 4Мб, алгоритм медленный,
+// алгоритм с фильтрацией и переполнением на очереди куда быстрее.
 
 console.log('App start');
 appCopyFiles('./files/test', './files/newFolder');
