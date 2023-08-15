@@ -1,30 +1,21 @@
-import { copyFolder } from './modules/copyFolder.js';
-import { Logger } from './modules/Logger._v1.js';
+import { bufferToText, textToBuffer } from './modules/buffer.js';
+import { mergeTextFiles } from './modules/mergeTextFiles.js';
 
-const appCopyFiles = async (sourceDir, targetDir) => {
-  try {
-    await copyFolder(sourceDir, targetDir);
-  } catch (err) {
-    console.warn(`Ошибка приложения: ${err.message}`);
-  }
+const text = 'Привет мир!';
+const utf8Buffer = textToBuffer(text, 'utf8');
+const decodedHex = bufferToText(utf8Buffer, 'hex');
+const hexBuffer = textToBuffer(decodedHex, 'hex');
+const decodedText = bufferToText(utf8Buffer, 'utf8');
+
+console.log('utf8Buffer: ', utf8Buffer);
+console.log('decodedText: ', decodedText);
+console.log(
+  'comparing utf8Buffer &  hexBuffer: ',
+  hexBuffer.equals(utf8Buffer),
+);
+
+const appMergeTextFiles = async () => {
+  await mergeTextFiles('./files', 'result.txt');
 };
 
-const appLogger = async () => {
-  const logger = new Logger('./files/log-v1.txt', 1024);
-
-  for (let j = 0; j < 10; j++) {
-    setTimeout(async () => {
-      console.log(`Пакет - ${j + 1}`);
-      for (let i = 0; i < 100000; i++) {
-        logger.log(`Сообщение №${i + 100000 * j}`);
-        if (i + 100000 * j === 234231) {
-          throw new Error('Пришел полный пицец!!!!');
-        }
-      }
-    }, 1000 * j);
-  }
-};
-
-console.log('App start');
-appCopyFiles('./files/test', './files/newFolder');
-appLogger();
+appMergeTextFiles();
