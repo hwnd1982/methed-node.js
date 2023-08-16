@@ -1,0 +1,140 @@
+[
+  {
+    "question": "Что такое CommonJS?",
+    "options": [
+      "Модульная система для разработки веб-приложений на Node.js",
+      "Стандарт для организации модулей в JavaScript",
+      "Библиотека для работы с базой данных в Node.js"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "Какие встроенные модули позволяют работать с файловой системой в Node.js?",
+    "options": ["http и https", "crypto и zlib", "fs и path"],
+    "correctIndex": 2
+  },
+  {
+    "question": "Что такое EventEmitter в Node.js?",
+    "options": [
+      "Модуль для работы с базой данных",
+      "Фреймворк для разработки веб-серверов",
+      "Класс, который позволяет генерировать и слушать события"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "question": "Что такое замыкание (closure) в JavaScript?",
+    "options": [
+      "Массив, содержащий другие массивы",
+      "Функция, которая ссылается на переменные из внешнего контекста",
+      "Метод массива, используемый для объединения элементов в одну строку"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "Что такое прототип (prototype) в JavaScript?",
+    "options": [
+      "Объект, который используется для наследования свойств и методов",
+      "Метод массива, используемый для выполнения заданной функции для каждого элемента массива",
+      "Способ определения переменной, доступной только внутри функции"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "question": "Как добавить элемент в конец массива в JavaScript?",
+    "options": ["arr.pop()", "arr.push(element)", "arr.shift(element)"],
+    "correctIndex": 1
+  },
+  {
+    "question": "Как объявить переменную в JavaScript?",
+    "options": ["variable", "declare", "var, let или const"],
+    "correctIndex": 2
+  },
+  {
+    "question": "Как проверить, является ли значение переменной NaN в JavaScript?",
+    "options": ["isNaN(value)", "value === NaN", "value == NaN"],
+    "correctIndex": 0
+  },
+  {
+    "question": "Какие операторы используются для сравнения значений и типов в JavaScript?",
+    "options": ["== и !=", "=== и !==", "> и <", ">= и <="],
+    "correctIndex": 1
+  },
+  {
+    "question": "Что такое стрелочные функции (arrow functions) в JavaScript?",
+    "options": [
+      "Сокращенный синтаксис для объявления функций",
+      "Методы объекта",
+      "Функции, которые вызываются автоматически при создании объекта"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "question": "Какие методы используются для работы с массивами в JavaScript?",
+    "options": [
+      "slice, pop и assign",
+      "map, filter и reduce",
+      "toUpperCase и toLowerCase"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "Какие методы используются для работы с асинхронным кодом в JavaScript?",
+    "options": [
+      "Callback функции, промисы и асинхронные функции (async/await)",
+      "Циклы и условные операторы",
+      "Методы setTimeout и setInterval"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "question": "Что такое Node.js?",
+    "options": [
+      "JavaScript-фреймворк для разработки серверных приложений",
+      "База данных для хранения информации о серверах",
+      "Среда выполнения JavaScript для разработки серверных приложений"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "question": "Какие основные возможности предоставляет Node.js?",
+    "options": [
+      "Многопоточность",
+      "Асинхронность и событийный цикл",
+      "Статическая типизация"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "Какие модули входят в стандартную библиотеку Node.js?",
+    "options": [
+      "express, mongoose, sequelize",
+      "react, vue, angular",
+      "http, fs, path"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "question": "Что такое npm?",
+    "options": [
+      "Node Package Manager - менеджер пакетов для Node.js",
+      "Npm - платформа для разработки мобильных приложений",
+      "Node.js Performance Monitor - инструмент для отслеживания производительности Node.js приложений"
+    ],
+    "correctIndex": 0
+  },
+  {
+    "question": "Как установить пакет с помощью npm?",
+    "options": [
+      "npm add package-name",
+      "npm install package-name",
+      "npm download package-name"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "question": "Какой файл используется для указания зависимостей проекта и их версий?",
+    "options": ["package.json", "index.js", "app.js"],
+    "correctIndex": 0
+  }
+]
