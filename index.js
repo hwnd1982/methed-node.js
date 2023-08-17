@@ -15,18 +15,18 @@ const next = questions => {
 
     clear();
     progress(1, 0, questions.length, userResponses);
-    pos(5, 0);
+    pos(8, 0);
 
     if (currentQuestion < questions.length) {
       const { question, options } = questions[currentQuestion];
 
       write(chalk.green(`${currentQuestion + 1}. ${question}`));
       options.forEach((response, index) => {
-        pos(6 + index, 0);
+        pos(9 + index, 0);
         write(`${index + 1}: ${response}`);
       });
 
-      pos(6 + options.length, 0);
+      pos(10 + options.length, 0);
       write(chalk.blue('Ваш ответ: '));
       currentQuestion++;
 
@@ -36,7 +36,7 @@ const next = questions => {
     const numberOfCorrectAnswers = userResponses.reduce(
       (numberOfCorrectAnswers, answer) => (numberOfCorrectAnswers += +answer),
     );
-    pos(6, 0);
+    pos(8, 0);
     if (numberOfCorrectAnswers / questions.length > 0.9) {
       write(
         chalk.green(
@@ -59,7 +59,7 @@ const next = questions => {
         ),
       );
     }
-    pos(8, 0);
+    pos(10, 0);
     process.exit();
   };
 
