@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import chalk from 'chalk';
 import process from 'node:process';
 import { write, read, clear, pos, progress } from './modules/cliControls.js';
 
@@ -20,14 +19,14 @@ const next = questions => {
     if (currentQuestion < questions.length) {
       const { question, options } = questions[currentQuestion];
 
-      write(chalk.green(`${currentQuestion + 1}. ${question}`));
+      write(`${currentQuestion + 1}. ${question}`, 'green');
       options.forEach((response, index) => {
         pos(9 + index, 0);
         write(`${index + 1}: ${response}`);
       });
 
       pos(10 + options.length, 0);
-      write(chalk.blue('Ваш ответ: '));
+      write('Ваш ответ: ', 'blue');
       currentQuestion++;
 
       return;
@@ -39,24 +38,21 @@ const next = questions => {
     pos(8, 0);
     if (numberOfCorrectAnswers / questions.length > 0.9) {
       write(
-        chalk.green(
-          'Отличный результат! Правильных ответов: ' +
-            `${numberOfCorrectAnswers} из ${questions.length}`,
-        ),
+        'Отличный результат! Правильных ответов: ' +
+          `${numberOfCorrectAnswers} из ${questions.length}`,
+        'green',
       );
     } else if (numberOfCorrectAnswers / questions.length > 0.5) {
       write(
-        chalk.blue(
-          'Хороший результат! Правильных ответов: ' +
-            `${numberOfCorrectAnswers} из ${questions.length}`,
-        ),
+        'Хороший результат! Правильных ответов: ' +
+          `${numberOfCorrectAnswers} из ${questions.length}`,
+        'blue',
       );
     } else {
       write(
-        chalk.red(
-          'Вы дебил... Правильных ответов: ' +
-            `${numberOfCorrectAnswers} из ${questions.length}`,
-        ),
+        'Вы дебил... Правильных ответов: ' +
+          `${numberOfCorrectAnswers} из ${questions.length}`,
+        'red',
       );
     }
     pos(10, 0);
