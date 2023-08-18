@@ -1,66 +1,61 @@
 import { readFile } from 'node:fs/promises';
-import process from 'node:process';
-import { write, read, clear, pos, progress } from './modules/cliControls.js';
+import ControlsCLI from './modules/ControlsCLI.js';
 
 const next = questions => {
   let currentQuestion = 0;
   const userResponses = Array(questions.length).fill(null);
+  const controls = new ControlsCLI(1, 0);
 
   const next = (answer = null) => {
+    let finalMessage = '';
+    let finalMessageColor = '';
+    let numberOfCorrectAnswers = 0;
+
     if (answer !== null) {
       userResponses[currentQuestion - 1] =
         +answer - 1 === questions[currentQuestion - 1].correctIndex;
     }
 
-    clear();
-    progress(1, 0, questions.length, userResponses);
-    pos(8, 0);
+    controls.clear().progress(userResponses);
 
     if (currentQuestion < questions.length) {
       const { question, options } = questions[currentQuestion];
 
-      write(`${currentQuestion + 1}. ${question}`, 'green');
-      options.forEach((response, index) => {
-        pos(9 + index, 0);
-        write(`${index + 1}: ${response}`);
-      });
-
-      pos(10 + options.length, 0);
-      write('Ваш ответ: ', 'blue');
-      currentQuestion++;
+      controls
+        .write(`${++currentQuestion}. ${question}`, 'green', true)
+        .list(options)
+        .go(1, 0)
+        .write('Ваш ответ: ', 'blue');
 
       return;
     }
 
-    const numberOfCorrectAnswers = userResponses.reduce(
+    numberOfCorrectAnswers = userResponses.reduce(
       (numberOfCorrectAnswers, answer) => (numberOfCorrectAnswers += +answer),
     );
-    pos(8, 0);
+
     if (numberOfCorrectAnswers / questions.length > 0.9) {
-      write(
+      finalMessage =
         'Отличный результат! Правильных ответов: ' +
-          `${numberOfCorrectAnswers} из ${questions.length}`,
-        'green',
-      );
+        `${numberOfCorrectAnswers} из ${questions.length}`;
+      finalMessageColor = 'green';
     } else if (numberOfCorrectAnswers / questions.length > 0.5) {
-      write(
+      finalMessage =
         'Хороший результат! Правильных ответов: ' +
-          `${numberOfCorrectAnswers} из ${questions.length}`,
-        'blue',
-      );
+        `${numberOfCorrectAnswers} из ${questions.length}`;
+      finalMessageColor = 'blue';
     } else {
-      write(
+      finalMessage =
         'Вы дебил... Правильных ответов: ' +
-          `${numberOfCorrectAnswers} из ${questions.length}`,
-        'red',
-      );
+        `${numberOfCorrectAnswers} из ${questions.length}`;
+      finalMessageColor = 'green';
     }
-    pos(10, 0);
-    process.exit();
+
+    controls.go(2, 0).write(finalMessage, finalMessageColor).go(2, 0).exit();
   };
 
+  controls.read(next);
   next();
-  read(next);
 };
 
 next(JSON.parse(await readFile('./files/question.json')));
