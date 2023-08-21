@@ -1,76 +1,70 @@
-import { readFile } from 'node:fs/promises';
-import ControlsCLI from './modules/ControlsCLI.js';
+import process from 'node:process';
+import chalk from 'chalk';
+import { generatePassword } from './services/generatePassword.js';
+import { argsParse } from './utils/argsParse.js';
+import { getPasswordOptions } from './services/getPasswordOptions.js';
 
-const displayFinalReport = (userResponses, controls) => {
-  let finalMessage = '';
-  let finalMessageColor = '';
-  const numberOfCorrectAnswers = userResponses.reduce(
-    (numberOfCorrectAnswers, answer) => (numberOfCorrectAnswers += +answer),
-  );
-
-  if (numberOfCorrectAnswers / userResponses.length > 0.9) {
-    finalMessage =
-      'Отличный результат! Правильных ответов: ' +
-      `${numberOfCorrectAnswers} из ${userResponses.length}`;
-    finalMessageColor = 'green';
-  } else if (numberOfCorrectAnswers / userResponses.length > 0.5) {
-    finalMessage =
-      'Хороший результат! Правильных ответов: ' +
-      `${numberOfCorrectAnswers} из ${userResponses.length}`;
-    finalMessageColor = 'blue';
-  } else {
-    finalMessage =
-      'Вы дебил... Правильных ответов: ' +
-      `${numberOfCorrectAnswers} из ${userResponses.length}`;
-    finalMessageColor = 'red';
-  }
-
-  controls.go(2, 0).write(finalMessage, finalMessageColor).go(2, 0).exit();
-};
-
-const next = questions => {
-  let currentQuestion = 0;
-  const userResponses = Array(questions.length).fill(null);
-  const controls = new ControlsCLI(1, 0);
-
-  const next = (answer = null) => {
-    let requestMessage = 'Ваш ответ: ';
-    let requestMessageColor = 'blue';
-
-    if (answer !== null) {
-      const possibleAnswers = questions[currentQuestion - 1].options.map(
-        (item, index) => index + 1,
-      );
-
-      if (!possibleAnswers.includes(+answer)) {
-        currentQuestion--;
-        requestMessage = 'Выберите ответ из списка: ';
-        requestMessageColor = 'red';
-      } else {
-        userResponses[currentQuestion - 1] =
-          +answer - 1 === questions[currentQuestion - 1].correctIndex;
-      }
-    }
-
-    controls.clear().progress(userResponses);
-
-    if (currentQuestion < questions.length) {
-      const { question, options } = questions[currentQuestion];
-
-      controls
-        .write(`${++currentQuestion}. ${question}`, 'green', true)
-        .list(options)
-        .go(1, 0)
-        .write(requestMessage, requestMessageColor);
-
-      return;
-    }
-
-    displayFinalReport(userResponses, controls);
+const app = async () => {
+  const args = argsParse(process.argv, ['ask']);
+  const options = {
+    length: 8,
+    uppercase: false,
+    numbers: false,
+    special: false,
   };
 
-  controls.read(next);
-  next();
+  if (args.h || args.help) {
+    console.log(
+      `${
+        chalk.blue('-h --help', 'blue') +
+        chalk.green(' - помощь, список команд (игнорирует другие команды);\n')
+      }${chalk.blue('-l --length') + chalk.green(' - длина пароля (8);\n')}${
+        chalk.blue('-u --uppercase') +
+        chalk.green(' - включить заглавные буквы;\n')
+      }${chalk.blue('-n --numbers') + chalk.green(' - включить числа;\n')}${
+        chalk.blue('-s --special') + chalk.green(' - включить спецсимволы;\n')
+      }${
+        chalk.blue('-a --ask') +
+        chalk.green(' - запустить опрос (игнорирует другие команды);\n')
+      }`,
+    );
+
+    return;
+  }
+
+  if (args.a || args.ask) {
+    console.log(chalk.magenta('Ответьте на вопросы\n'));
+
+    console.log(
+      `\n ${chalk.blue('Пароль:')}  ${chalk.red(
+        generatePassword(await getPasswordOptions()),
+      )}`,
+    );
+
+    process.exit();
+  }
+
+  if (args.l || args.length) {
+    options.length = +args.l || +args.length || 8;
+  }
+
+  if (args.u || args.uppercase) {
+    options.uppercase = args.u || args.uppercase;
+  }
+
+  if (args.n || args.numbers) {
+    options.numbers = args.n || args.numbers;
+  }
+
+  if (args.s || args.special) {
+    options.special = args.s || args.special;
+  }
+
+  console.log(
+    `${chalk.blue('Пароль:')}  ${chalk.red(generatePassword(options))}`,
+  );
+
+  process.exit();
 };
 
-next(JSON.parse(await readFile('./files/question.json')));
+app();
