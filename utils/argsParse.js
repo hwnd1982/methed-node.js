@@ -1,33 +1,27 @@
 export const argsParse = ([, , ...argv], commands = []) => {
-  const args = {};
+  const [command] = argv;
+  const args = { command };
 
-  if (commands.includes(argv[0])) {
-    args[argv[0]] = true;
+  if (!command || /^(-h|--help)/.test(command)) {
+    return { command: 'help', value: '' };
   }
 
-  for (let i = 0; i < argv.length; i++) {
-    switch (true) {
-      case !argv[i].startsWith('-'):
-        break;
-      case argv[i + 1] && !argv[i + 1].startsWith('-'):
-        args[argv[i].substring(1)] = argv[i + 1];
-        break;
-      case argv[i].startsWith('-no-'):
-        args[argv[i].substring(4)] = false;
-        break;
-      case argv[i].startsWith('--'):
-        if (argv[i].includes('=')) {
-          const [key, value] = argv[i].split('=');
-
-          args[key.substring(2)] = value;
-        } else {
-          args[argv[i].substring(2)] = true;
-        }
-        break;
-      default:
-        args[argv[i].substring(1)] = true;
+  if (commands.includes(command)) {
+    for (const arg of argv) {
+      switch (true) {
+        case command === arg:
+          break;
+        case /^(-h|--help)/.test(arg):
+          return { command: 'help', value: args.command };
+        case !isNaN(arg):
+          args['id'] = arg;
+          break;
+        default:
+          args['value'] = arg;
+      }
     }
+    return args;
   }
 
-  return args;
+  return { command: 'error', value: 'Некорректная команда...' };
 };
