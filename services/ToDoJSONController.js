@@ -95,13 +95,13 @@ export class ToDoJSONController extends EventEmitter {
 
     this.on('clear', () => console.log(chalk.red('\nСписок дел очищен...')));
 
-    this.on('error', error => console.log('\n' + chalk.red(error)));
+    this.on('error', error =>
+      console.log(chalk.magenta('\nError: ') + chalk.red(error)),
+    );
   }
 
   async add(task) {
-    if (!task) {
-      this.error('Вы забыли передать значение...');
-      await this.help('add');
+    if (!(await this.check(!task, 'add'))) {
       return;
     }
 
@@ -112,9 +112,7 @@ export class ToDoJSONController extends EventEmitter {
   }
 
   async get(id) {
-    if (!id) {
-      this.error('Вы забыли передать значение...');
-      await this.help('get');
+    if (!(await this.check(!id, 'get'))) {
       return;
     }
 
@@ -134,6 +132,9 @@ export class ToDoJSONController extends EventEmitter {
   }
 
   async status(id, value) {
+    if (!(await this.check(!id || !value, 'status'))) {
+      return;
+    }
     await this.read();
     this.find(id);
 
@@ -147,6 +148,10 @@ export class ToDoJSONController extends EventEmitter {
   }
 
   async delete(id) {
+    if (!(await this.check(!id, 'delete'))) {
+      return;
+    }
+
     await this.read();
     this.find(id);
 
@@ -191,6 +196,16 @@ export class ToDoJSONController extends EventEmitter {
 
   find(id) {
     this.task = this.data.find(task => +task.id === +id);
+  }
+
+  async check(check, command) {
+    if (check) {
+      this.error('Вы забыли передать корректные значения...');
+      await this.help(command);
+      return false;
+    }
+
+    return true;
   }
 
   async write() {
