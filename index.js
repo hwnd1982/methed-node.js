@@ -3,15 +3,20 @@ import chalk from 'chalk';
 import { generatePassword } from './services/generatePassword.js';
 import { argsParse } from './utils/argsParse.js';
 import { getPasswordOptions } from './services/getPasswordOptions.js';
+import { saveSettings, getSettings } from './services/settings.service.js';
 
 const app = async () => {
-  const args = argsParse(process.argv, ['ask']);
+  const args = argsParse(process.argv, ['ask', 'settings']);
   const options = {
     length: 8,
     uppercase: false,
     numbers: false,
     special: false,
   };
+
+  if (!args.settings) {
+    Object.assign(options, await getSettings());
+  }
 
   if (args.h || args.help) {
     console.log(
@@ -26,9 +31,13 @@ const app = async () => {
       }${
         chalk.blue('-a --ask') +
         chalk.green(' - запустить опрос (игнорирует другие команды);\n')
+      }${
+        chalk.blue('settings') +
+        chalk.green(' - сохраняет настройки из параметров -l -u -n -s;\n')
       }`,
     );
 
+    process.exit();
     return;
   }
 
@@ -58,6 +67,11 @@ const app = async () => {
 
   if (args.s || args.special) {
     options.special = args.s || args.special;
+  }
+
+  if (args.settings) {
+    await saveSettings(options);
+    process.exit();
   }
 
   console.log(
