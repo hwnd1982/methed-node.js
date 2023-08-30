@@ -1,21 +1,20 @@
-import process from 'node:process';
-import { ToDoJSONController } from './services/ToDoJSONController.js';
-import { argsParse } from './utils/argsParse.js';
+import Questionnaire from './services/Questionnaire.js';
+import {
+  getTextFileNames,
+  replaceTextAll,
+} from './services/TextFileService.js';
+
+const questions = [
+  'Введите путь к дирректории: ',
+  'Введите строку для поиска: ',
+  'Введите строку для замены: ',
+];
 
 const app = async () => {
-  const controller = new ToDoJSONController();
-  const { command, id, value } = argsParse(process.argv, [
-    'add',
-    'update',
-    'list',
-    'status',
-    'get',
-    'delete',
-    'clear',
-  ]);
+  const questionnaire = new Questionnaire(questions);
+  const [dirPath, find, replace] = await questionnaire.questioning;
 
-  await controller[command](...[id, value].filter(arg => arg));
-  process.exit();
+  await replaceTextAll(await getTextFileNames(dirPath), find, replace);
 };
 
 app();
