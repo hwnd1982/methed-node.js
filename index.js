@@ -3,7 +3,7 @@ import { ToDoJSONController } from './services/ToDoJSONController.js';
 import { argsParse } from './utils/argsParse.js';
 
 const app = async () => {
-  const controller = new ToDoJSONController('./files/todo.json');
+  const controller = new ToDoJSONController();
   const { command, id, value } = argsParse(process.argv, [
     'add',
     'update',

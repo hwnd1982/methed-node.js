@@ -1,17 +1,36 @@
 import { EventEmitter } from 'node:events';
+import os from 'node:os';
+import path from 'node:path';
 import chalk from 'chalk';
 import { writeFile, readFile } from 'node:fs/promises';
+import { checkDirPath } from './checkDirPath.js';
+
+const help = {
+  add: '<task>: добавить новую задачу.',
+  list: ': вывести список всех задач.',
+  get: '<id>: вывести информацию о задаче с указанным идентификатором.',
+  update: '<id> <newTask>: обновить задачу с указанным идентификатором.',
+  status:
+    '<id> <newStatus>: обновить статус задачи с указанным идентификатором.',
+  delete: '<id>: удалить задачу с указанным идентификатором.',
+  clear: ': очистить список.',
+};
 
 export class ToDoJSONController extends EventEmitter {
-  constructor(filename, init = true) {
+  constructor(filename = null, init = true) {
     super();
-    this.filename = filename;
+    this.filename = filename || path.join(os.homedir(), 'todo', 'todo.json');
     this.data = null;
     this.task = null;
+    this.pathOK = null;
     init && this.init();
   }
 
   init() {
+    this.pathOK = Promise.resolve(path.dirname(this.filename)).then(dirPath =>
+      checkDirPath(dirPath),
+    );
+
     this.on('add', id =>
       console.log(
         chalk.blue(`\nЗадача добавлена с идентификатором ${chalk.cyan(id)}`),
@@ -147,6 +166,22 @@ export class ToDoJSONController extends EventEmitter {
     }
   }
 
+  async update(id, value) {
+    if (!(await this.check(!id || !value, 'update'))) {
+      return;
+    }
+    await this.read();
+    this.find(id);
+
+    if (this.task) {
+      this.task.task = value;
+      await this.write();
+      this.emit('update', this.task.id);
+    } else {
+      this.error('Записи с таким идентификатором не обноружино...');
+    }
+  }
+
   async delete(id) {
     if (!(await this.check(!id, 'delete'))) {
       return;
@@ -175,9 +210,6 @@ export class ToDoJSONController extends EventEmitter {
   }
 
   async help(command) {
-    const help = JSON.parse(
-      await readFile('./files/help.json').catch(() => ''),
-    );
     const options = command ? {} : help;
 
     if (command) {
@@ -188,6 +220,7 @@ export class ToDoJSONController extends EventEmitter {
   }
 
   async read() {
+    await this.pathOK;
     if (!this.data) {
       this.data =
         JSON.parse(await readFile(this.filename).catch(() => '[]')) || [];
@@ -209,6 +242,7 @@ export class ToDoJSONController extends EventEmitter {
   }
 
   async write() {
+    await this.pathOK;
     await writeFile(this.filename, JSON.stringify(this.data));
   }
 }
