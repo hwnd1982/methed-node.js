@@ -1,62 +1,52 @@
 import http from 'node:http';
+import { parse } from 'node:url';
+import Questionnaire from './services/Questionnaire.js';
 
-const options = {
-  hostname: 'jsonplaceholder.typicode.com',
-  path: '/posts',
-  port: 80,
-  headers: {
-    'Content-type': 'application/json; charset=UTF-8',
-    'User-Agent': 'MethedApp/1.0.0',
-  },
-};
+import chalk from 'chalk';
 
-const sendGetRequest = () => {
-  options.method = 'GET';
+const fetchData = async url =>
+  new Promise((resolve, reject) => {
+    const { hostname, pathname } = parse(url);
+    console.log(parse(url));
+    const options = {
+      hostname: 'js.methed.ru',
+      path: '/',
+      port: 443,
+      headers: {
+        'Content-type': 'text/html; application/xhtml',
+        'User-Agent': 'MethedParseApp/1.0.0',
+      },
+    };
 
-  const req = http.request(options, res => {
-    let data = '';
+    // console.log(options.hostname + path);
+    const req = http.request(options, res => {
+      let data = '';
 
-    res.on('data', chunk => (data += chunk));
+      res.on('data', chunk => (data += chunk));
 
-    res.on('end', () => {
-      console.log('Response data for GET request');
-      console.log(JSON.parse(data));
+      res.on('end', () => {
+        console.log('');
+        console.log(chalk.green('Response data for GET request'));
+        console.log('');
+        resolve(data);
+      });
     });
-  });
 
-  req.on('error', error => {
-    console.log(error);
-  });
-
-  req.end();
-};
-
-// sendGetRequest();
-
-const sendPostRequest = () => {
-  options.method = 'POST';
-  const req = http.request(options, res => {
-    let data = '';
-
-    res.on('data', chunk => (data += chunk));
-
-    res.on('end', () => {
-      console.log('Response data for GET request');
-      console.log(JSON.parse(data));
+    req.on('error', error => {
+      reject(error);
     });
+
+    req.end();
   });
 
-  req.on('error', error => {
-    console.log(error);
-  });
-  const postData = JSON.stringify({
-    title: 'NodeJS',
-    body: 'Testing data transmission in node.JS',
-    userId: 1,
-  });
+const app = async () => {
+  const questionnaire = new Questionnaire(['Введите адрес страницы: ']);
+  const [url] = await questionnaire.questioning;
+  const data = await fetchData(url);
 
-  req.write(postData);
-  req.end();
+  data.replace(/<h(\d).*>(.*)<\/h\d>/gi, (match, level, inner) => {
+    console.log(match, level, inner);
+  });
 };
 
-sendPostRequest();
+app();
