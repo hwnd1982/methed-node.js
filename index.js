@@ -1,23 +1,17 @@
-import {
-  fetchHTML,
-  parseHTML,
-  printHeadersList,
-  printLinksList,
-} from './services/HTMLRequestServices.js';
-import Questionnaire from './services/Questionnaire.js';
+import { readFileSync } from 'node:fs';
+import https from 'node:https';
 
-const app = async () => {
-  try {
-    const questionnaire = new Questionnaire(['Введите адрес страницы: ']);
-    const [url] = await questionnaire.questioning;
-    const data = await fetchHTML(url.replace(/^http[s]*:\/\//gi, ''));
-    const { links, hesders } = parseHTML(data);
-
-    printHeadersList(hesders);
-    printLinksList(links);
-  } catch (err) {
-    console.log(err);
-  }
+const options = {
+  key: readFileSync('server-key.pem'),
+  cert: readFileSync('server-cert.pem'),
 };
 
-app();
+const server = https.createServer(options, (req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+
+  res.end('Hello! This HTTPS server...');
+});
+
+server.listen(443, () => {
+  console.log('Сервер слушает порт 443');
+});
